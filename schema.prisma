@@ -5,56 +5,59 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model User {
-  id            String       @default(cuid()) @id
-  name          String?
-  callsign      String?   @unique
-  email         String?   @unique
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
-  radios        Radio[] @relation("user_id")
-  homeLatitude      Float?
-  homeLongitude     Float?
-  homeAddress  String?
+  id                       String         @id @default(cuid())
+  name                     String?
+  callsign                 String?        @unique
+  email                    String?        @unique
+  createdAt                DateTime       @default(now()) @map(name: "created_at")
+  updatedAt                DateTime       @updatedAt @map(name: "updated_at")
+  radios                   Radio[]        @relation("user_id")
+  homeLatitude             Float?
+  homeLongitude            Float?
+  homeAddress              String?
   transmittedSignalReports SignalReport[] @relation("transmitting_user_id")
-  receivedSignalReports SignalReport[] @relation("reporting_user_id")
+  receivedSignalReports    SignalReport[] @relation("reporting_user_id")
+
   @@map(name: "users")
 }
 
 model Radio {
-  id            String       @default(cuid()) @id
+  id            String         @id @default(cuid())
   name          String
   description   String?
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
-  userId        String    @map("user_id")
-  user          User      @relation(fields: [userId], references: [id], name: "user_id")
+  createdAt     DateTime       @default(now()) @map(name: "created_at")
+  updatedAt     DateTime       @updatedAt @map(name: "updated_at")
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [id], name: "user_id")
   signalReports SignalReport[] @relation("radio_id")
+
   @@map(name: "radios")
 }
 
 model SignalReport {
-  id            String       @default(cuid()) @id
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  location      String?
-  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
-  radioId       String?    @map("radio_id")
-  radio         Radio?     @relation(fields: [radioId], references: [id], name: "radio_id")
-  signalStrength  Int
-  signalQuality Int
-  signalNotes   String?
-  reportingUserId String?    @map("reporting_user_id")
-  reportingUser   User?      @relation(fields: [reportingUserId], references: [id], name: "reporting_user_id")
-  reportingUserLatitude Float?
-  reportingUserLongitude Float?
-  transmittingUserId String?    @map("transmitting_user_id")
-  transmittingUser   User?      @relation(fields: [transmittingUserId], references: [id], name: "transmitting_user_id")
-  transmittingUserLatitude Float?
+  id                        String   @id @default(cuid())
+  createdAt                 DateTime @default(now()) @map(name: "created_at")
+  location                  String?
+  signalStrength            Int
+  signalQuality             Int
+  updatedAt                 DateTime @updatedAt @map(name: "updated_at")
+  radioId                   String?  @map("radio_id")
+  radio                     Radio?   @relation(fields: [radioId], references: [id], name: "radio_id")
+  signalNotes               String?
+  reportingUserId           String?  @map("reporting_user_id")
+  reportingUser             User?    @relation(fields: [reportingUserId], references: [id], name: "reporting_user_id")
+  reportingUserLatitude     Float?
+  reportingUserLongitude    Float?
+  transmittingUserId        String?  @map("transmitting_user_id")
+  transmittingUser          User?    @relation(fields: [transmittingUserId], references: [id], name: "transmitting_user_id")
+  transmittingUserLatitude  Float?
   transmittingUserLongitude Float?
+
   @@map(name: "signal_reports")
 }
