@@ -17,10 +17,12 @@ model User {
   email         String?   @unique
   createdAt     DateTime  @default(now()) @map(name: "created_at")
   updatedAt     DateTime  @updatedAt @map(name: "updated_at")
-  radios        Radio[]
+  radios        Radio[] @relation("user_id")
   homeLatitude      Float?
   homeLongitude     Float?
   homeAddress  String?
+  transmittedSignalReports SignalReport[] @relation("transmitting_user_id")
+  receivedSignalReports SignalReport[] @relation("reporting_user_id")
   @@map(name: "users")
 }
 
@@ -32,6 +34,7 @@ model Radio {
   updatedAt     DateTime  @updatedAt @map(name: "updated_at")
   userId        String    @map("user_id")
   user          User      @relation(fields: [userId], references: [id], name: "user_id")
+  signalReports SignalReport[] @relation("radio_id")
   @@map(name: "radios")
 }
 
