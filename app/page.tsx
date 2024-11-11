@@ -68,6 +68,10 @@ const receivedCommunications: Record<string, string[]> = {
   WB9JKL: ["KD9XYZ", "KC9GHI"],
 };
 
+const lineSymbol = {
+  path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+};
+
 const Home: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -80,20 +84,30 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (selectedUser) {
-      console.log("🚀 ~ useEffect ~ selectedUser:", selectedUser);
       const callsignsUserCanHear = receivedCommunications[selectedUser];
-      const polylines = callsignsUserCanHear.map((callsign) => {
-        return {
+
+      const newPolylines = callsignsUserCanHear.map((callsign) => {
+        return new google.maps.Polyline({
           path: [
             { lat: users[selectedUser].lat, lng: users[selectedUser].lng },
             { lat: users[callsign].lat, lng: users[callsign].lng },
           ],
-        };
+          icons: [
+            {
+              icon: lineSymbol,
+              offset: "100%",
+            },
+          ],
+        });
       });
 
-      console.log("🚀 ~ useEffect ~ polylines:", polylines);
-
-      setPolylines(polylines);
+      for (const polyline of polylines) {
+        polyline.setMap(null);
+      }
+      for (const polyline of newPolylines) {
+        polyline.setMap(map);
+      }
+      setPolylines(newPolylines);
     }
   }, [selectedUser]);
 
@@ -128,7 +142,8 @@ const Home: React.FC = () => {
             }}
           />
         ))}
-        {selectedUser &&
+
+        {/* {selectedUser &&
           polylines.map((polyline) => (
             <Polyline
               key={selectedUser + JSON.stringify(polyline.path)}
@@ -139,7 +154,7 @@ const Home: React.FC = () => {
                 strokeWeight: 2,
               }}
             />
-          ))}
+          ))} */}
       </GoogleMap>
     </>
   ) : (
