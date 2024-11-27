@@ -203,6 +203,17 @@ const Home: React.FC = () => {
       localStorage.getItem("signalReports") || "[]"
     );
     setReports(savedReports);
+
+    if (selectedStation) {
+      const stationsToShow = showingHeardBy
+        ? findStationsHeardBy(selectedStation)
+        : findStationsWhoCanHear(selectedStation);
+      drawCommunicationLines(
+        selectedStation,
+        stationsToShow,
+        showingHeardBy ? "#FF0000" : "#00FF00"
+      );
+    }
   };
 
   const onLoad = React.useCallback(function callback(map) {
@@ -255,6 +266,7 @@ const Home: React.FC = () => {
               icon={{
                 url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
               }}
+              onClick={() => handleMarkerClick(operatorInfo.callsign)}
             />
 
             {/* Other station markers */}
