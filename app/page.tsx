@@ -15,6 +15,9 @@ import {
   findStationsWhoCanHear,
 } from "./utils/stationUtils";
 
+
+// TODO: pop up stations as they log in
+
 const Home: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -86,7 +89,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (selectedStation) {
-      lines.forEach((line) => line.setMap(null));
+      lines.forEach((line) => line?.setMap(null));
       const stationsToShow = showingHeardBy
         ? findStationsHeardBy(selectedStation, reports)
         : findStationsWhoCanHear(selectedStation, reports);
@@ -171,7 +174,7 @@ const Home: React.FC = () => {
           <span className="font-bold">{selectedStation}</span>{" "}
           <button
             onClick={() => {
-              lines.forEach((line) => line.setMap(null));
+              lines.forEach((line) => line?.setMap(null));
               setLines([]);
               setSelectedStation(null);
             }}
