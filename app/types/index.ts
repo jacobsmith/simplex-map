@@ -12,6 +12,7 @@ export type SignalReport = {
   strength: number;
   created_at: string;
   session_id?: string;
+  notes?: string;
 };
 
 export type OperatorInfo = {

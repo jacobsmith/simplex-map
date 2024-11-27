@@ -201,7 +201,7 @@ const Home: React.FC = () => {
     setMap(map);
   }, []);
 
-  const onUnmount = React.useCallback(function callback(map) {
+  const onUnmount = React.useCallback(function callback() {
     setMap(null);
   }, []);
 
@@ -255,7 +255,7 @@ const Home: React.FC = () => {
 
       {selectedStation && (
         <p className="mb-4 text-sm">
-          Showing stations that {showingHeardBy ? "can hear" : "are heard by"}{" "}
+          Showing stations that {showingHeardBy ? "are heard by" : "can hear"}{" "}
           <span className="font-bold">{selectedStation}</span>{" "}
           <button
             onClick={() => {
