@@ -11,7 +11,7 @@ import {
 
 const mapContainerStyle = {
   width: "100%",
-  height: "400px",
+  height: "800px",
 };
 
 const center = {
@@ -68,10 +68,6 @@ const receivedCommunications: Record<string, string[]> = {
   WB9JKL: ["KD9XYZ", "KC9GHI"],
 };
 
-const lineSymbol = {
-  path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-};
-
 const Home: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -82,8 +78,14 @@ const Home: React.FC = () => {
   const [selectedUser, setSelectedUser] = React.useState<string | null>(null);
   const [polylines, setPolylines] = React.useState<any>([]);
 
+  const lineSymbol = isLoaded
+    ? {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+      }
+    : null;
+
   useEffect(() => {
-    if (selectedUser) {
+    if (selectedUser && isLoaded && map) {
       const callsignsUserCanHear = receivedCommunications[selectedUser];
 
       const newPolylines = callsignsUserCanHear.map((callsign) => {
@@ -109,11 +111,11 @@ const Home: React.FC = () => {
       }
       setPolylines(newPolylines);
     }
-  }, [selectedUser]);
+  }, [selectedUser, isLoaded, map]);
 
   const onLoad = React.useCallback(function callback(map) {
-    const bounds = new window.google.maps.LatLngBounds(center);
-    map.fitBounds(bounds);
+    // const bounds = new window.google.maps.LatLngBounds(center);
+    // map.fitBounds(bounds);
     setMap(map);
   }, []);
 
