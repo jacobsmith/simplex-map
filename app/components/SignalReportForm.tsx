@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 type SignalReport = {
   timestamp: number;
-  heardCallsign: string;
-  reportingCallsign: string;
+  heard_callsign: string;
+  reporting_callsign: string;
   readability: number;
   strength: number;
   notes?: string;
@@ -28,7 +29,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!operatorInfo) {
@@ -38,25 +39,24 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
       return;
     }
 
-    const report: SignalReport = {
-      timestamp: Date.now(),
-      heardCallsign: heardCallsign.toUpperCase(),
-      reportingCallsign: operatorInfo.callsign,
+    const report = {
+      reporting_callsign: operatorInfo.callsign,
+      heard_callsign: heardCallsign.toUpperCase(),
       readability: parseInt(readability),
       strength: parseInt(strength),
       notes: notes.trim(),
+      created_at: new Date().toISOString(),
     };
 
-    // Get existing reports from localStorage
-    const existingReports = JSON.parse(
-      localStorage.getItem("signalReports") || "[]"
-    );
+    const { data, error } = await supabase
+      .from("signal_reports")
+      .insert([report]);
 
-    // Add new report
-    localStorage.setItem(
-      "signalReports",
-      JSON.stringify([...existingReports, report])
-    );
+    if (error) {
+      console.error("Error submitting report:", error);
+      // Handle error appropriately
+      return;
+    }
 
     // Clear form
     setHeardCallsign("");
@@ -64,7 +64,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
     setStrength("9");
     setNotes("");
 
-    onSubmit();
+    if (onSubmit) onSubmit();
   };
 
   if (!operatorInfo) {

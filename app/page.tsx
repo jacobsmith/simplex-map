@@ -10,6 +10,8 @@ import {
 } from "@react-google-maps/api";
 import SignalReportForm from "./components/SignalReportForm";
 import OperatorSetupForm from "./components/OperatorSetupForm";
+import { supabase } from "../lib/supabaseClient";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const mapContainerStyle = {
   width: "100%",
@@ -77,7 +79,17 @@ const Home: React.FC = () => {
   });
 
   const [map, setMap] = React.useState(null);
-  const [reports, setReports] = React.useState<any[]>([]);
+  const [reports, setReports] = React.useState<
+    {
+      id: string;
+      reporting_callsign: string;
+      heard_callsign: string;
+      readability: number;
+      strength: number;
+      notes?: string;
+      created_at: string;
+    }[]
+  >([]);
   const [operatorInfo, setOperatorInfo] = React.useState<any>(null);
   const [selectedStation, setSelectedStation] = React.useState<string | null>(
     null
@@ -107,15 +119,15 @@ const Home: React.FC = () => {
   // Function to find stations that can hear the selected station
   const findStationsWhoCanHear = (callsign: string) => {
     return reports
-      .filter((report) => report.heardCallsign === callsign)
-      .map((report) => report.reportingCallsign);
+      .filter((report) => report.heard_callsign === callsign)
+      .map((report) => report.reporting_callsign);
   };
 
   // Function to find stations that the selected station can hear
   const findStationsHeardBy = (callsign: string) => {
     return reports
-      .filter((report) => report.reportingCallsign === callsign)
-      .map((report) => report.heardCallsign);
+      .filter((report) => report.reporting_callsign === callsign)
+      .map((report) => report.heard_callsign);
   };
 
   // Function to draw communication lines
@@ -186,17 +198,43 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    // Load operator info from localStorage
-    const savedOperatorInfo = localStorage.getItem("operatorInfo");
-    if (savedOperatorInfo) {
-      setOperatorInfo(JSON.parse(savedOperatorInfo));
-    }
+    // Initial fetch of reports
+    const fetchReports = async () => {
+      const { data, error } = await supabase
+        .from("signal_reports")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    // Load reports from localStorage
-    const savedReports = JSON.parse(
-      localStorage.getItem("signalReports") || "[]"
-    );
-    setReports(savedReports);
+      if (error) {
+        console.error("Error fetching reports:", error);
+        return;
+      }
+
+      setReports(data || []);
+    };
+
+    fetchReports();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel("signal_reports")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "signal_reports",
+        },
+        (payload) => {
+          setReports((currentReports) => [payload.new, ...currentReports]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   const handleOperatorSetup = (info: any) => {
@@ -207,11 +245,9 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleReportSubmitted = () => {
-    const savedReports = JSON.parse(
-      localStorage.getItem("signalReports") || "[]"
-    );
-    setReports(savedReports);
+  const handleReportSubmitted = async () => {
+    // The actual submission will now happen in the SignalReportForm component
+    // This function can be used for any additional logic needed after submission
   };
 
   const onLoad = React.useCallback(function callback(map) {
@@ -222,11 +258,9 @@ const Home: React.FC = () => {
     setMap(null);
   }, []);
 
-  const clearLocalStorage = () => {
+  const clearOperatorInfo = () => {
     localStorage.removeItem("operatorInfo");
-    localStorage.removeItem("signalReports");
     setOperatorInfo(null);
-    setReports([]);
     setSelectedStation(null);
     setLines([]);
   };
@@ -352,12 +386,12 @@ const Home: React.FC = () => {
                 .map((report, index) => (
                   <div key={index} className="border-b pb-2">
                     <p className="font-bold">
-                      {report.reportingCallsign} → {report.heardCallsign}
+                      {report.reporting_callsign} → {report.heard_callsign}
                     </p>
                     <p className="text-sm text-gray-600">
                       Signal: {report.readability} by {report.strength}
                       <br />
-                      {new Date(report.timestamp).toLocaleString()}
+                      {new Date(report.created_at).toLocaleString()}
                       {report.notes && (
                         <>
                           <br />
@@ -372,7 +406,7 @@ const Home: React.FC = () => {
 
           {/* Clear Local Storage Button */}
           <button
-            onClick={clearLocalStorage}
+            onClick={clearOperatorInfo}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Clear Local Storage
