@@ -80,7 +80,7 @@ const Home: React.FC = () => {
 
   const lineSymbol = isLoaded
     ? {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
       }
     : null;
 
