@@ -8,6 +8,8 @@ import {
   useJsApiLoader,
   Polyline,
 } from "@react-google-maps/api";
+import SignalReportForm from "./components/SignalReportForm";
+import OperatorSetupForm from "./components/OperatorSetupForm";
 
 const mapContainerStyle = {
   width: "100%",
@@ -60,13 +62,13 @@ const locations = [
   },
 ];
 
-const receivedCommunications: Record<string, string[]> = {
-  W9ABC: ["KD9XYZ", "N9DEF", "KC9GHI"],
-  KD9XYZ: ["W9ABC", "N9DEF", "WB9JKL"],
-  N9DEF: ["W9ABC", "KD9XYZ", "KC9GHI"],
-  KC9GHI: ["W9ABC", "N9DEF", "WB9JKL"],
-  WB9JKL: ["KD9XYZ", "KC9GHI"],
-};
+// const receivedCommunications: Record<string, string[]> = {
+//   W9ABC: ["KD9XYZ", "N9DEF", "KC9GHI"],
+//   KD9XYZ: ["W9ABC", "N9DEF", "WB9JKL"],
+//   N9DEF: ["W9ABC", "KD9XYZ", "KC9GHI"],
+//   KC9GHI: ["W9ABC", "N9DEF", "WB9JKL"],
+//   WB9JKL: ["KD9XYZ", "KC9GHI"],
+// };
 
 const Home: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
@@ -75,47 +77,135 @@ const Home: React.FC = () => {
   });
 
   const [map, setMap] = React.useState(null);
-  const [selectedUser, setSelectedUser] = React.useState<string | null>(null);
-  const [polylines, setPolylines] = React.useState<any>([]);
+  const [reports, setReports] = React.useState<any[]>([]);
+  const [operatorInfo, setOperatorInfo] = React.useState<any>(null);
+  const [selectedStation, setSelectedStation] = React.useState<string | null>(
+    null
+  );
+  const [showingHeardBy, setShowingHeardBy] = React.useState(true);
+  const [lines, setLines] = React.useState<google.maps.Polyline[]>([]);
 
-  const lineSymbol = isLoaded
-    ? {
-        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-      }
-    : null;
+  // Function to find stations that can hear the selected station
+  const findStationsWhoCanHear = (callsign: string) => {
+    return reports
+      .filter((report) => report.heardCallsign === callsign)
+      .map((report) => report.reportingCallsign);
+  };
+
+  // Function to find stations that the selected station can hear
+  const findStationsHeardBy = (callsign: string) => {
+    return reports
+      .filter((report) => report.reportingCallsign === callsign)
+      .map((report) => report.heardCallsign);
+  };
+
+  // Function to draw communication lines
+  const drawCommunicationLines = (
+    fromCallsign: string,
+    toCallsigns: string[],
+    color: string
+  ) => {
+    // Clear existing lines
+    lines.forEach((line) => line.setMap(null));
+
+    if (!map) return;
+
+    const newLines = toCallsigns.map((toCallsign) => {
+      // Find the coordinates for both stations
+      const fromStation =
+        locations.find((loc) => loc.callsign === fromCallsign) ||
+        (operatorInfo.callsign === fromCallsign ? operatorInfo : null);
+      const toStation =
+        locations.find((loc) => loc.callsign === toCallsign) ||
+        (operatorInfo.callsign === toCallsign ? operatorInfo : null);
+
+      if (!fromStation || !toStation) return null;
+
+      const from = showingHeardBy ? toStation : fromStation;
+      const to = showingHeardBy ? fromStation : toStation;
+
+      return new google.maps.Polyline({
+        path: [
+          {
+            lat: from.lat || from.coordinates.lat,
+            lng: from.lng || from.coordinates.lng,
+          },
+          {
+            lat: to.lat || to.coordinates.lat,
+            lng: to.lng || to.coordinates.lng,
+          },
+        ],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+        map: map as google.maps.Map,
+        icons: [
+          {
+            icon: {
+              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              scale: 1.5,
+            },
+            offset: "100%",
+          },
+        ],
+      });
+    });
+
+    setLines(newLines.filter(Boolean) as google.maps.Polyline[]);
+  };
+
+  const handleMarkerClick = (callsign: string) => {
+    if (selectedStation === callsign) {
+      // Toggle between showing who can hear this station and who this station can hear
+      setShowingHeardBy(!showingHeardBy);
+      const stationsToShow = showingHeardBy
+        ? findStationsHeardBy(callsign)
+        : findStationsWhoCanHear(callsign);
+      drawCommunicationLines(
+        callsign,
+        stationsToShow,
+        showingHeardBy ? "#FF0000" : "#00FF00"
+      );
+    } else {
+      // New station selected, show who can hear it
+      setSelectedStation(callsign);
+      setShowingHeardBy(true);
+      const stationsWhoCanHear = findStationsWhoCanHear(callsign);
+      drawCommunicationLines(callsign, stationsWhoCanHear, "#00FF00");
+    }
+  };
 
   useEffect(() => {
-    if (selectedUser && isLoaded && map) {
-      const callsignsUserCanHear = receivedCommunications[selectedUser];
-
-      const newPolylines = callsignsUserCanHear.map((callsign) => {
-        return new google.maps.Polyline({
-          path: [
-            { lat: users[selectedUser].lat, lng: users[selectedUser].lng },
-            { lat: users[callsign].lat, lng: users[callsign].lng },
-          ],
-          icons: [
-            {
-              icon: lineSymbol,
-              offset: "100%",
-            },
-          ],
-        });
-      });
-
-      for (const polyline of polylines) {
-        polyline.setMap(null);
-      }
-      for (const polyline of newPolylines) {
-        polyline.setMap(map);
-      }
-      setPolylines(newPolylines);
+    // Load operator info from localStorage
+    const savedOperatorInfo = localStorage.getItem("operatorInfo");
+    if (savedOperatorInfo) {
+      setOperatorInfo(JSON.parse(savedOperatorInfo));
     }
-  }, [selectedUser, isLoaded, map]);
+
+    // Load reports from localStorage
+    const savedReports = JSON.parse(
+      localStorage.getItem("signalReports") || "[]"
+    );
+    setReports(savedReports);
+  }, []);
+
+  const handleOperatorSetup = (info: any) => {
+    setOperatorInfo(info);
+    // Optionally center the map on the operator's location
+    if (map) {
+      (map as google.maps.Map).setCenter(info.coordinates);
+    }
+  };
+
+  const handleReportSubmitted = () => {
+    const savedReports = JSON.parse(
+      localStorage.getItem("signalReports") || "[]"
+    );
+    setReports(savedReports);
+  };
 
   const onLoad = React.useCallback(function callback(map) {
-    // const bounds = new window.google.maps.LatLngBounds(center);
-    // map.fitBounds(bounds);
     setMap(map);
   }, []);
 
@@ -123,42 +213,93 @@ const Home: React.FC = () => {
     setMap(null);
   }, []);
 
-  return isLoaded ? (
-    <>
-      <h1>Simplex Map</h1>
-      <p>A map of simplex radios in the area.</p>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={center}
-        zoom={11}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-      >
-        {locations.map((location, index) => (
-          <Marker
-            key={index}
-            position={{ lat: location.lat, lng: location.lng }}
-            label={location.callsign}
-            onClick={() => {
-              setSelectedUser(location.callsign);
-            }}
-          />
-        ))}
+  if (!operatorInfo) {
+    return <OperatorSetupForm onComplete={handleOperatorSetup} />;
+  }
 
-        {/* {selectedUser &&
-          polylines.map((polyline) => (
-            <Polyline
-              key={selectedUser + JSON.stringify(polyline.path)}
-              path={polyline.path}
-              options={{
-                strokeColor: Math.random() < 0.5 ? "#FF0000" : "#00FF00",
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
+  return isLoaded ? (
+    <div className="p-4">
+      <h1 className="text-3xl mb-4">Simplex Map</h1>
+      <p className="mb-4">
+        Operating as: {operatorInfo.callsign} from {operatorInfo.address}
+      </p>
+      {selectedStation && (
+        <p className="mb-4 text-sm">
+          Showing stations that {showingHeardBy ? "can hear" : "are heard by"}{" "}
+          <span className="font-bold">{selectedStation}</span>{" "}
+          <button
+            onClick={() => {
+              lines.forEach((line) => line.setMap(null));
+              setLines([]);
+              setSelectedStation(null);
+            }}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            (clear)
+          </button>
+        </p>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={operatorInfo.coordinates}
+            zoom={11}
+            onLoad={onLoad}
+            onUnmount={onUnmount}
+          >
+            {/* Operator's location marker */}
+            <Marker
+              position={operatorInfo.coordinates}
+              label={operatorInfo.callsign}
+              icon={{
+                url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
               }}
             />
-          ))} */}
-      </GoogleMap>
-    </>
+
+            {/* Other station markers */}
+            {locations.map((location, index) => (
+              <Marker
+                key={index}
+                position={{ lat: location.lat, lng: location.lng }}
+                label={location.callsign}
+                onClick={() => handleMarkerClick(location.callsign)}
+                icon={{
+                  url:
+                    selectedStation === location.callsign
+                      ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+                      : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                }}
+              />
+            ))}
+          </GoogleMap>
+        </div>
+        <div className="space-y-4">
+          <SignalReportForm onSubmit={handleReportSubmitted} />
+
+          <div className="bg-white rounded shadow p-4">
+            <h2 className="text-xl mb-4">Recent Reports</h2>
+            <div className="space-y-2">
+              {reports
+                .slice(-5)
+                .reverse()
+                .map((report, index) => (
+                  <div key={index} className="border-b pb-2">
+                    <p className="font-bold">
+                      {report.reportingCallsign} → {report.heardCallsign}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Signal: {report.readability} by {report.strength}
+                      <br />
+                      {new Date(report.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   ) : (
     <></>
   );
