@@ -50,7 +50,10 @@ const SimplexMap: React.FC<SimplexMapProps> = ({
       {locations.map((location, index) => (
         <Marker
           key={index}
-          position={{ lat: location.lat, lng: location.lng }}
+          position={{
+            lat: location.coordinates.lat,
+            lng: location.coordinates.lng,
+          }}
           onClick={() => onMarkerClick(location.callsign)}
           icon={createCustomMarkerIcon(
             location.callsign,

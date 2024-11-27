@@ -7,7 +7,6 @@ import SignalReportForm from "./components/SignalReportForm";
 import OperatorSetupForm from "./components/OperatorSetupForm";
 import RecentReports from "./components/RecentReports";
 import SimplexMap from "./components/SimplexMap";
-import { staticLocations } from "./constants/mapConfig";
 import { drawCommunicationLines } from "./utils/mapUtils";
 import { SignalReport, OperatorInfo, CheckinSession } from "./types";
 import {
@@ -38,7 +37,7 @@ const Home: React.FC = () => {
   const [currentSession, setCurrentSession] =
     React.useState<CheckinSession | null>(null);
   const [operatorLocations, setOperatorLocations] = React.useState<
-    { callsign: string; coordinates: google.maps.LatLng }[]
+    { callsign: string; coordinates: { lat: number; lng: number } }[]
   >([]);
 
   const handleMarkerClick = (callsign: string) => {
@@ -120,16 +119,11 @@ const Home: React.FC = () => {
 
         const initialLocations = data.map((participant) => ({
           callsign: participant.callsign,
-          coordinates: new google.maps.LatLng(
-            Number(participant.latitude),
-            Number(participant.longitude)
-          ),
+          coordinates: {
+            lat: Number(participant.latitude),
+            lng: Number(participant.longitude),
+          },
         }));
-
-        console.log(
-          "🚀 ~ initialLocations ~ initialLocations:",
-          initialLocations
-        );
 
         setOperatorLocations(initialLocations);
       }
@@ -155,10 +149,10 @@ const Home: React.FC = () => {
             ...prevLocations,
             {
               callsign: payload.new.callsign,
-              coordinates: new google.maps.LatLng(
-                Number(payload.new.latitude),
-                Number(payload.new.longitude)
-              ),
+              coordinates: {
+                lat: Number(payload.new.latitude),
+                lng: Number(payload.new.longitude),
+              },
             },
           ]);
         }
@@ -183,7 +177,7 @@ const Home: React.FC = () => {
         showingHeardBy ? "#FF0000" : "#00FF00",
         map,
         showingHeardBy,
-        staticLocations,
+        operatorLocations,
         operatorInfo
       );
       setLines(newLines);
