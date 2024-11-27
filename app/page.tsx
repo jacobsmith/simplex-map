@@ -224,6 +224,15 @@ const Home: React.FC = () => {
     setMap(null);
   }, []);
 
+  const clearLocalStorage = () => {
+    localStorage.removeItem("operatorInfo");
+    localStorage.removeItem("signalReports");
+    setOperatorInfo(null);
+    setReports([]);
+    setSelectedStation(null);
+    setLines([]);
+  };
+
   if (!operatorInfo) {
     return <OperatorSetupForm onComplete={handleOperatorSetup} />;
   }
@@ -264,7 +273,9 @@ const Home: React.FC = () => {
               position={operatorInfo.coordinates}
               label={operatorInfo.callsign}
               icon={{
-                url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                url: showingHeardBy
+                  ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                  : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
               }}
               onClick={() => handleMarkerClick(operatorInfo.callsign)}
             />
@@ -279,7 +290,9 @@ const Home: React.FC = () => {
                 icon={{
                   url:
                     selectedStation === location.callsign
-                      ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+                      ? showingHeardBy
+                        ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                        : "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
                       : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
                 }}
               />
@@ -309,6 +322,14 @@ const Home: React.FC = () => {
                 ))}
             </div>
           </div>
+
+          {/* Clear Local Storage Button */}
+          <button
+            onClick={clearLocalStorage}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Clear Local Storage
+          </button>
         </div>
       </div>
     </div>
