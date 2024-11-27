@@ -203,11 +203,16 @@ const Home: React.FC = () => {
       localStorage.getItem("signalReports") || "[]"
     );
     setReports(savedReports);
+    console.log("🚀 ~ handleReportSubmitted ~ savedReports:", savedReports);
 
     if (selectedStation) {
       const stationsToShow = showingHeardBy
         ? findStationsHeardBy(selectedStation)
         : findStationsWhoCanHear(selectedStation);
+      console.log(
+        "🚀 ~ handleReportSubmitted ~ stationsToShow:",
+        stationsToShow
+      );
       drawCommunicationLines(
         selectedStation,
         stationsToShow,
@@ -232,6 +237,19 @@ const Home: React.FC = () => {
     setSelectedStation(null);
     setLines([]);
   };
+
+  useEffect(() => {
+    if (selectedStation) {
+      const stationsToShow = showingHeardBy
+        ? findStationsHeardBy(selectedStation)
+        : findStationsWhoCanHear(selectedStation);
+      drawCommunicationLines(
+        selectedStation,
+        stationsToShow,
+        showingHeardBy ? "#FF0000" : "#00FF00"
+      );
+    }
+  }, [reports, selectedStation, showingHeardBy]);
 
   if (!operatorInfo) {
     return <OperatorSetupForm onComplete={handleOperatorSetup} />;
