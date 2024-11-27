@@ -41,6 +41,46 @@ export const drawCommunicationLines = (
     const from = showingHeardBy ? toStation : fromStation;
     const to = showingHeardBy ? fromStation : toStation;
 
+    const dashedLineSymbol = {
+      path: "M 0,-1 0,1",
+      strokeOpacity: 1,
+      scale: 4,
+    };
+
+    if (showingHeardBy) {
+      return new google.maps.Polyline({
+        path: [
+          {
+            lat: from.lat || from.coordinates.lat,
+            lng: from.lng || from.coordinates.lng,
+          },
+          {
+            lat: to.lat || to.coordinates.lat,
+            lng: to.lng || to.coordinates.lng,
+          },
+        ],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 0,
+        strokeWeight: 2,
+        map: map,
+        icons: [
+          {
+            icon: {
+              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+              scale: 1.5,
+            },
+            offset: "0%",
+          },
+          {
+            icon: dashedLineSymbol,
+            offset: "100%",
+            repeat: "20px",
+          },
+        ],
+      });
+    }
+
     return new google.maps.Polyline({
       path: [
         {
