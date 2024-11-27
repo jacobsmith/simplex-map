@@ -9,12 +9,12 @@ import RecentReports from "./components/RecentReports";
 import SimplexMap from "./components/SimplexMap";
 import { staticLocations } from "./constants/mapConfig";
 import { drawCommunicationLines } from "./utils/mapUtils";
-import { SignalReport, OperatorInfo } from "./types";
+import { SignalReport, OperatorInfo, CheckinSession } from "./types";
 import {
   findStationsHeardBy,
   findStationsWhoCanHear,
 } from "./utils/stationUtils";
-
+import CheckinSessionManager from "./components/CheckinSessionManager";
 
 // TODO: pop up stations as they log in
 
@@ -35,6 +35,11 @@ const Home: React.FC = () => {
   const [showingHeardBy, setShowingHeardBy] = React.useState(true);
   const [lines, setLines] = React.useState<google.maps.Polyline[]>([]);
   const [labelSize, setLabelSize] = React.useState(12); // Default label size
+  const [currentSession, setCurrentSession] =
+    React.useState<CheckinSession | null>(null);
+  const [operatorLocations, setOperatorLocations] = React.useState<
+    { callsign: string; coordinates: google.maps.LatLng }[]
+  >([]);
 
   const handleMarkerClick = (callsign: string) => {
     if (selectedStation === callsign) {
@@ -50,10 +55,19 @@ const Home: React.FC = () => {
   useEffect(() => {
     // Initial fetch of reports
     const fetchReports = async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("signal_reports")
         .select("*")
         .order("created_at", { ascending: false });
+
+      // If there's a current session, filter reports for that session
+      if (currentSession) {
+        query = query.eq("session_id", currentSession.id);
+      } else {
+        query = query.is("session_id", null);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching reports:", error);
@@ -74,8 +88,12 @@ const Home: React.FC = () => {
           event: "INSERT",
           schema: "public",
           table: "signal_reports",
+          filter: currentSession
+            ? `session_id=eq.${currentSession.id}`
+            : "session_id=is.null",
         },
-        (payload) => {
+        (payload: { new: SignalReport }) => {
+          console.log("New report:", payload.new);
           setReports((currentReports) => [payload.new, ...currentReports]);
         }
       )
@@ -85,7 +103,73 @@ const Home: React.FC = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, []);
+  }, [currentSession]);
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (currentSession) {
+        const { data, error } = await supabase
+          .from("session_participants")
+          .select("*")
+          .eq("session_id", currentSession.id);
+
+        if (error) {
+          console.error("Error fetching participants:", error);
+          return;
+        }
+
+        const initialLocations = data.map((participant) => ({
+          callsign: participant.callsign,
+          coordinates: new google.maps.LatLng(
+            Number(participant.latitude),
+            Number(participant.longitude)
+          ),
+        }));
+
+        console.log(
+          "🚀 ~ initialLocations ~ initialLocations:",
+          initialLocations
+        );
+
+        setOperatorLocations(initialLocations);
+      }
+    };
+
+    fetchParticipants();
+
+    // Subscribe to real-time updates for session participants
+    const participantChannel = supabase
+      .channel("session_participants")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "session_participants",
+          filter: currentSession
+            ? `session_id=eq.${currentSession.id}`
+            : "session_id=is.null",
+        },
+        (payload: { new: any }) => {
+          setOperatorLocations((prevLocations) => [
+            ...prevLocations,
+            {
+              callsign: payload.new.callsign,
+              coordinates: new google.maps.LatLng(
+                Number(payload.new.latitude),
+                Number(payload.new.longitude)
+              ),
+            },
+          ]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      participantChannel.unsubscribe();
+    };
+  }, [currentSession, map]);
 
   useEffect(() => {
     if (selectedStation) {
@@ -145,6 +229,13 @@ const Home: React.FC = () => {
         Operating as: {operatorInfo.callsign} from {operatorInfo.address}
       </p>
 
+      <CheckinSessionManager
+        operatorCallsign={operatorInfo.callsign}
+        currentSession={currentSession}
+        onSessionChange={setCurrentSession}
+        coordinates={operatorInfo.coordinates}
+      />
+
       {/* Label Size Control */}
       <div className="mb-4">
         <label
@@ -189,7 +280,7 @@ const Home: React.FC = () => {
           <SimplexMap
             center={operatorInfo.coordinates}
             operatorInfo={operatorInfo}
-            locations={staticLocations}
+            locations={operatorLocations}
             selectedStation={selectedStation}
             showingHeardBy={showingHeardBy}
             labelSize={labelSize}
@@ -199,7 +290,10 @@ const Home: React.FC = () => {
           />
         </div>
         <div className="space-y-4">
-          <SignalReportForm onSubmit={handleReportSubmitted} />
+          <SignalReportForm
+            onSubmit={handleReportSubmitted}
+            sessionId={currentSession?.id}
+          />
           <RecentReports reports={reports} />
           <button
             onClick={clearOperatorInfo}

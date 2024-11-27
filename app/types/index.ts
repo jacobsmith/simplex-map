@@ -10,8 +10,8 @@ export type SignalReport = {
   heard_callsign: string;
   readability: number;
   strength: number;
-  notes?: string;
   created_at: string;
+  session_id?: string;
 };
 
 export type OperatorInfo = {
@@ -22,3 +22,26 @@ export type OperatorInfo = {
     lng: number;
   };
 };
+
+export interface CheckinSession {
+  id: string;
+  name: string;
+  description?: string;
+  region: string;
+  start_time: string;
+  end_time?: string;
+  created_by: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SessionParticipant {
+  id: string;
+  session_id: string;
+  callsign: string;
+  latitude: number;
+  longitude: number;
+  joined_at: string;
+  left_at?: string;
+  created_at: string;
+}

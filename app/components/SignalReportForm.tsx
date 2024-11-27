@@ -12,9 +12,13 @@ type SignalReport = {
 
 interface SignalReportFormProps {
   onSubmit: () => void;
+  sessionId?: string;
 }
 
-const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
+const SignalReportForm: React.FC<SignalReportFormProps> = ({
+  onSubmit,
+  sessionId,
+}) => {
   const [heardCallsign, setHeardCallsign] = useState("");
   const [readability, setReadability] = useState("5");
   const [strength, setStrength] = useState("9");
@@ -46,6 +50,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
       strength: parseInt(strength),
       notes: notes.trim(),
       created_at: new Date().toISOString(),
+      session_id: sessionId,
     };
 
     const { data, error } = await supabase

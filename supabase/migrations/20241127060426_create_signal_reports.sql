@@ -24,4 +24,7 @@ create policy "Enable insert access for all users"
 -- Create indexes for better query performance
 create index signal_reports_reporting_callsign_idx on signal_reports(reporting_callsign);
 create index signal_reports_heard_callsign_idx on signal_reports(heard_callsign);
-create index signal_reports_created_at_idx on signal_reports(created_at); 
+create index signal_reports_created_at_idx on signal_reports(created_at);
+
+-- Add the table to the publication for all operations
+alter publication supabase_realtime add table signal_reports; 
