@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type Coordinates = {
   lat: number;
@@ -23,8 +23,24 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const storedOperatorInfo = localStorage.getItem("operatorInfo");
+    if (storedOperatorInfo) {
+      try {
+        const { callsign, address } = JSON.parse(storedOperatorInfo);
+        setCallsign(callsign);
+        setAddress(address);
+
+        onComplete(JSON.parse(storedOperatorInfo));
+      } catch (error) {
+        console.error("Error parsing operator info:", error);
+      }
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent | null) => {
+    e?.preventDefault();
     setIsLoading(true);
     setError(null);
 
