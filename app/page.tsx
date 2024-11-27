@@ -84,6 +84,25 @@ const Home: React.FC = () => {
   );
   const [showingHeardBy, setShowingHeardBy] = React.useState(true);
   const [lines, setLines] = React.useState<google.maps.Polyline[]>([]);
+  const [labelSize, setLabelSize] = React.useState(12); // Default label size
+
+  const createCustomMarkerIcon = (
+    label: string,
+    color: string,
+    zIndex: number
+  ) => {
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <rect x="0" y="0" width="100" height="30" fill="${color}" />
+        <text x="50" y="20" font-size="${labelSize}" text-anchor="middle" fill="white">${label}</text>
+      </svg>
+    `)}`,
+      scaledSize: new google.maps.Size(labelSize * 5, labelSize * 5),
+      anchor: new google.maps.Point(20, 20),
+      zIndex: zIndex,
+    };
+  };
 
   // Function to find stations that can hear the selected station
   const findStationsWhoCanHear = (callsign: string) => {
@@ -159,20 +178,10 @@ const Home: React.FC = () => {
     if (selectedStation === callsign) {
       // Toggle between showing who can hear this station and who this station can hear
       setShowingHeardBy(!showingHeardBy);
-      const stationsToShow = showingHeardBy
-        ? findStationsHeardBy(callsign)
-        : findStationsWhoCanHear(callsign);
-      drawCommunicationLines(
-        callsign,
-        stationsToShow,
-        showingHeardBy ? "#FF0000" : "#00FF00"
-      );
     } else {
       // New station selected, show who can hear it
       setSelectedStation(callsign);
       setShowingHeardBy(true);
-      const stationsWhoCanHear = findStationsWhoCanHear(callsign);
-      drawCommunicationLines(callsign, stationsWhoCanHear, "#00FF00");
     }
   };
 
@@ -203,22 +212,6 @@ const Home: React.FC = () => {
       localStorage.getItem("signalReports") || "[]"
     );
     setReports(savedReports);
-    console.log("🚀 ~ handleReportSubmitted ~ savedReports:", savedReports);
-
-    if (selectedStation) {
-      const stationsToShow = showingHeardBy
-        ? findStationsHeardBy(selectedStation)
-        : findStationsWhoCanHear(selectedStation);
-      console.log(
-        "🚀 ~ handleReportSubmitted ~ stationsToShow:",
-        stationsToShow
-      );
-      drawCommunicationLines(
-        selectedStation,
-        stationsToShow,
-        showingHeardBy ? "#FF0000" : "#00FF00"
-      );
-    }
   };
 
   const onLoad = React.useCallback(function callback(map) {
@@ -261,6 +254,30 @@ const Home: React.FC = () => {
       <p className="mb-4">
         Operating as: {operatorInfo.callsign} from {operatorInfo.address}
       </p>
+
+      {/* Label Size Control */}
+      <div className="mb-4">
+        <label
+          htmlFor="labelSize"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Label Size
+        </label>
+        <input
+          type="range"
+          id="labelSize"
+          name="labelSize"
+          min="8"
+          max="24"
+          value={labelSize}
+          onChange={(e) => setLabelSize(Number(e.target.value))}
+          className="mt-1 block w-full"
+        />
+        <span className="text-sm text-gray-600">
+          Current size: {labelSize}px
+        </span>
+      </div>
+
       {selectedStation && (
         <p className="mb-4 text-sm">
           Showing stations that {showingHeardBy ? "can hear" : "are heard by"}{" "}
@@ -289,32 +306,38 @@ const Home: React.FC = () => {
             {/* Operator's location marker */}
             <Marker
               position={operatorInfo.coordinates}
-              label={operatorInfo.callsign}
-              icon={{
-                url: showingHeardBy
-                  ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                  : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-              }}
+              icon={createCustomMarkerIcon(
+                operatorInfo.callsign,
+                showingHeardBy && selectedStation == operatorInfo.callsign
+                  ? "green"
+                  : "red",
+                selectedStation === operatorInfo.callsign ? 1000 : 1
+              )}
               onClick={() => handleMarkerClick(operatorInfo.callsign)}
             />
 
             {/* Other station markers */}
-            {locations.map((location, index) => (
-              <Marker
-                key={index}
-                position={{ lat: location.lat, lng: location.lng }}
-                label={location.callsign}
-                onClick={() => handleMarkerClick(location.callsign)}
-                icon={{
-                  url:
+            {[
+              ...locations,
+              locations.find((loc) => loc.callsign === selectedStation),
+            ]
+              .filter(Boolean)
+              .map((location, index) => (
+                <Marker
+                  key={index}
+                  position={{ lat: location.lat, lng: location.lng }}
+                  onClick={() => handleMarkerClick(location.callsign)}
+                  icon={createCustomMarkerIcon(
+                    location.callsign,
                     selectedStation === location.callsign
                       ? showingHeardBy
-                        ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                        : "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                      : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                }}
-              />
-            ))}
+                        ? "green"
+                        : "red"
+                      : "red",
+                    selectedStation === location.callsign ? 1000 : 1
+                  )}
+                />
+              ))}
           </GoogleMap>
         </div>
         <div className="space-y-4">
@@ -335,6 +358,12 @@ const Home: React.FC = () => {
                       Signal: {report.readability} by {report.strength}
                       <br />
                       {new Date(report.timestamp).toLocaleString()}
+                      {report.notes && (
+                        <>
+                          <br />
+                          <span className="italic">{report.notes}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                 ))}

@@ -6,6 +6,7 @@ type SignalReport = {
   reportingCallsign: string;
   readability: number;
   strength: number;
+  notes?: string;
 };
 
 interface SignalReportFormProps {
@@ -17,6 +18,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
   const [readability, setReadability] = useState("5");
   const [strength, setStrength] = useState("9");
   const [operatorInfo, setOperatorInfo] = useState<any>(null);
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     // Load operator info from localStorage
@@ -42,6 +44,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
       reportingCallsign: operatorInfo.callsign,
       readability: parseInt(readability),
       strength: parseInt(strength),
+      notes: notes.trim(),
     };
 
     // Get existing reports from localStorage
@@ -59,6 +62,7 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
     setHeardCallsign("");
     setReadability("5");
     setStrength("9");
+    setNotes("");
 
     onSubmit();
   };
@@ -120,6 +124,22 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({ onSubmit }) => {
               ))}
             </select>
           </div>
+        </div>
+        <div className="mb-4">
+          <label
+            htmlFor="notes"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Notes (optional)
+          </label>
+          <textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Antenna type, mobile/base, power level, etc."
+            rows={3}
+          />
         </div>
         <button
           type="submit"
