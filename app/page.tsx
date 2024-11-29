@@ -14,6 +14,7 @@ import {
   findStationsWhoCanHear,
 } from "./utils/stationUtils";
 import CheckinSessionManager from "./components/CheckinSessionManager";
+import { runDemo } from "./utils/demoScript";
 
 // TODO: pop up stations as they log in
 
@@ -213,7 +214,21 @@ const Home: React.FC = () => {
   };
 
   if (!operatorInfo) {
-    return <OperatorSetupForm onComplete={handleOperatorSetup} />;
+    return (
+      <OperatorSetupForm
+        onComplete={handleOperatorSetup}
+        onDemoClick={() =>
+          runDemo(
+            setOperatorInfo,
+            clearOperatorInfo,
+            setOperatorLocations,
+            setReports,
+            setSelectedStation,
+            setShowingHeardBy
+          )
+        }
+      />
+    );
   }
 
   return isLoaded ? (
@@ -294,6 +309,21 @@ const Home: React.FC = () => {
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Clear Local Storage
+          </button>
+          <button
+            onClick={() =>
+              runDemo(
+                setOperatorInfo,
+                clearOperatorInfo,
+                setOperatorLocations,
+                setReports,
+                setSelectedStation,
+                setShowingHeardBy
+              )
+            }
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 ml-2"
+          >
+            Run 30s Demo
           </button>
         </div>
       </div>
