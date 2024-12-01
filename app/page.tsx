@@ -24,6 +24,7 @@ const Home: React.FC = () => {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });
 
+  const [isDemo, setIsDemo] = React.useState(false);
   const [map, setMap] = React.useState(null);
   const [reports, setReports] = React.useState<SignalReport[]>([]);
   const [operatorInfo, setOperatorInfo] = React.useState<OperatorInfo | null>(
@@ -217,7 +218,8 @@ const Home: React.FC = () => {
     return (
       <OperatorSetupForm
         onComplete={handleOperatorSetup}
-        onDemoClick={() =>
+        onDemoClick={() => {
+          setIsDemo(true);
           runDemo(
             setOperatorInfo,
             clearOperatorInfo,
@@ -225,8 +227,8 @@ const Home: React.FC = () => {
             setReports,
             setSelectedStation,
             setShowingHeardBy
-          )
-        }
+          );
+        }}
       />
     );
   }
@@ -238,12 +240,14 @@ const Home: React.FC = () => {
         Operating as: {operatorInfo.callsign} from {operatorInfo.address}
       </p>
 
-      <CheckinSessionManager
-        operatorCallsign={operatorInfo.callsign}
-        currentSession={currentSession}
-        onSessionChange={setCurrentSession}
-        coordinates={operatorInfo.coordinates}
-      />
+      {!isDemo && (
+        <CheckinSessionManager
+          operatorCallsign={operatorInfo.callsign}
+          currentSession={currentSession}
+          onSessionChange={setCurrentSession}
+          coordinates={operatorInfo.coordinates}
+        />
+      )}
 
       {/* Label Size Control */}
       <div className="mb-4">
@@ -300,6 +304,7 @@ const Home: React.FC = () => {
         </div>
         <div className="space-y-4">
           <SignalReportForm
+            isDemo={true}
             onSubmit={handleReportSubmitted}
             sessionId={currentSession?.id}
           />

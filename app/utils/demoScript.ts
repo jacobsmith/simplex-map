@@ -92,24 +92,24 @@ export const runDemo = async (
      You can click around on any station to view who they can hear, as well as who can hear them.`,
     1
   );
-  await speak(`Let's get started. ${speakCallsign("K7SEA")} are you there?`, 1);
+  await speak(`Let's get started.`, 1);
 
   // Simulate other stations checking in
   const demoStations = [
     {
       callsign: "K7SEA",
       coordinates: { lat: 47.6062, lng: -122.3321 },
-      address: "Seattle, WA",
+      address: "Seattle, Washington",
     },
     {
       callsign: "K7BOI",
       coordinates: { lat: 43.615, lng: -116.2023 },
-      address: "Boise, ID",
+      address: "Boise, Idaho",
     },
     {
       callsign: "K7EUG",
       coordinates: { lat: 44.0521, lng: -123.0868 },
-      address: "Eugene, OR",
+      address: "Eugene, Oregon",
     },
   ];
 
@@ -221,7 +221,9 @@ export const runDemo = async (
   }
 
   await speak(
-    `All stations are checked in. This concludes the demo. Feel free to explore the map further. If you are organizing a simplex check-in, you can start a new check-in session above. If you are joining a check-in session, please find your session above and click to join. Thanks for using Simplex Map!`,
+    `All stations are checked in. This concludes the demo. Feel free to explore the map further. 
+    Notice that clicking on a station will show you who can hear it. Click again to see who it can hear, as they may be different depending on terrain, antennas, and other factors.
+    If you are organizing a simplex check-in, you can start a new check-in session above. If you are joining a check-in session, please find your session above and click to join. Thanks for using Simplex Map!`,
     netControlVoiceNumber
   );
 };

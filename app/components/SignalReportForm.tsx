@@ -13,11 +13,13 @@ type SignalReport = {
 interface SignalReportFormProps {
   onSubmit: () => void;
   sessionId?: string;
+  isDemo?: boolean;
 }
 
 const SignalReportForm: React.FC<SignalReportFormProps> = ({
   onSubmit,
   sessionId,
+  isDemo = false,
 }) => {
   const [heardCallsign, setHeardCallsign] = useState("");
   const [readability, setReadability] = useState("5");
@@ -71,6 +73,10 @@ const SignalReportForm: React.FC<SignalReportFormProps> = ({
 
     if (onSubmit) onSubmit();
   };
+
+  if (isDemo) {
+    return null;
+  }
 
   if (!operatorInfo) {
     return (
