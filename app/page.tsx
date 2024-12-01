@@ -15,7 +15,6 @@ import {
 } from "./utils/stationUtils";
 import CheckinSessionManager from "./components/CheckinSessionManager";
 import { runDemo } from "./utils/demoScript";
-import Stepper from "./components/Stepper";
 import CheckinSessionViewer from "./components/CheckinSessionViewer";
 
 // TODO: pop up stations as they log in
