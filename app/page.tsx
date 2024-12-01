@@ -16,6 +16,7 @@ import {
 import CheckinSessionManager from "./components/CheckinSessionManager";
 import { runDemo } from "./utils/demoScript";
 import Stepper from "./components/Stepper";
+import CheckinSessionViewer from "./components/CheckinSessionViewer";
 
 // TODO: pop up stations as they log in
 
@@ -271,14 +272,7 @@ const Home: React.FC = () => {
         Operating as: {operatorInfo.callsign} from {operatorInfo.address}
       </p>
 
-      {!isDemo && (
-        <CheckinSessionManager
-          operatorCallsign={operatorInfo.callsign}
-          currentSession={currentSession}
-          onSessionChange={setCurrentSession}
-          coordinates={operatorInfo.coordinates}
-        />
-      )}
+      {!isDemo && <CheckinSessionViewer selectedSession={currentSession} />}
 
       {/* Label Size Control */}
       <div className="mb-4">
