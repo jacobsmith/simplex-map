@@ -17,8 +17,6 @@ import CheckinSessionManager from "./components/CheckinSessionManager";
 import { runDemo } from "./utils/demoScript";
 import CheckinSessionViewer from "./components/CheckinSessionViewer";
 
-// TODO: pop up stations as they log in
-
 const Home: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -234,7 +232,7 @@ const Home: React.FC = () => {
     );
   }
 
-  if (!currentSession) {
+  if (!currentSession && !isDemo) {
     return (
       <CheckinSessionManager
         operatorCallsign={operatorInfo.callsign}

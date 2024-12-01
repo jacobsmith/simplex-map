@@ -223,7 +223,8 @@ export const runDemo = async (
   await speak(
     `All stations are checked in. This concludes the demo. Feel free to explore the map further. 
     Notice that clicking on a station will show you who can hear it. Click again to see who it can hear, as they may be different depending on terrain, antennas, and other factors.
-    If you are organizing a simplex check-in, you can start a new check-in session above. If you are joining a check-in session, please find your session above and click to join. Thanks for using Simplex Map!`,
+    Please click the End Demo button in the top right to return to the main page.
+    Thanks for using Simplex Map!`,
     netControlVoiceNumber
   );
 };
