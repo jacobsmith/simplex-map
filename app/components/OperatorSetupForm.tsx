@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { GoogleMap, Marker } from "@react-google-maps/api";
 
 type Coordinates = {
   lat: number;
@@ -24,6 +25,14 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [suggestions, setSuggestions] = useState<
+    Array<{
+      address: string;
+      coordinates: Coordinates;
+    }>
+  >([]);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -41,13 +50,11 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
     }
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent | null) => {
-    e?.preventDefault();
+  const searchAddress = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Geocode the address using Google Maps Geocoding API
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
           address
@@ -60,23 +67,42 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
         throw new Error("Could not find coordinates for this address");
       }
 
-      const { lat, lng } = data.results[0].geometry.location;
+      const results = data.results.map((result: any) => ({
+        address: result.formatted_address,
+        coordinates: result.geometry.location,
+      }));
 
-      const operatorInfo: OperatorInfo = {
-        callsign: callsign.toUpperCase(),
-        address,
-        coordinates: { lat, lng },
-      };
-
-      // Store in localStorage
-      localStorage.setItem("operatorInfo", JSON.stringify(operatorInfo));
-
-      onComplete(operatorInfo);
+      setSuggestions(results);
+      setShowMap(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAddressSelect = (address: string, coords: Coordinates) => {
+    setAddress(address);
+    setCoordinates(coords);
+  };
+
+  const handleSubmit = async (e: React.FormEvent | null) => {
+    e?.preventDefault();
+
+    if (!coordinates) {
+      setError("Please verify your address on the map");
+      return;
+    }
+
+    const operatorInfo: OperatorInfo = {
+      callsign: callsign.toUpperCase(),
+      address,
+      coordinates,
+    };
+
+    // Store in localStorage
+    localStorage.setItem("operatorInfo", JSON.stringify(operatorInfo));
+    onComplete(operatorInfo);
   };
 
   return (
@@ -92,7 +118,7 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
         </div>
         <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-6">Operator Setup</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <div>
               <label className="block mb-1">Your Callsign:</label>
               <input
@@ -106,22 +132,70 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
 
             <div>
               <label className="block mb-1">Operating Address:</label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="border p-2 w-full rounded"
-                placeholder="Enter your full address"
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="border p-2 w-full rounded"
+                  placeholder="Enter your full address"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={searchAddress}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={isLoading}
+                >
+                  Search
+                </button>
+              </div>
             </div>
+
+            {showMap && (
+              <div className="mt-4">
+                <div className="mb-4">
+                  <h3 className="font-semibold mb-2">Verify Location:</h3>
+                  <div className="space-y-2">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() =>
+                          handleAddressSelect(
+                            suggestion.address,
+                            suggestion.coordinates
+                          )
+                        }
+                        className={`w-full text-left p-2 rounded ${
+                          address === suggestion.address
+                            ? "bg-blue-100 border-blue-500"
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {suggestion.address}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="h-64 w-full rounded overflow-hidden">
+                  <GoogleMap
+                    mapContainerStyle={{ width: "100%", height: "100%" }}
+                    center={coordinates || suggestions[0]?.coordinates}
+                    zoom={15}
+                  >
+                    {coordinates && <Marker position={coordinates} />}
+                  </GoogleMap>
+                </div>
+              </div>
+            )}
 
             {error && <p className="text-red-500">{error}</p>}
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSubmit(null)}
               className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              disabled={isLoading}
+              disabled={isLoading || !coordinates}
             >
               {isLoading ? "Loading..." : "Continue"}
             </button>
