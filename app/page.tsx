@@ -257,8 +257,13 @@ const Home: React.FC = () => {
 
   return isLoaded ? (
     <div className="p-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl mb-4">Simplex Map</h1>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-3xl">Simplex Map</h1>
+          <p>
+            Operating as: {operatorInfo.callsign} from {operatorInfo.address}
+          </p>
+        </div>
         {isDemo && (
           <button
             onClick={handleEndDemo}
@@ -268,11 +273,6 @@ const Home: React.FC = () => {
           </button>
         )}
       </div>
-      <p className="mb-4">
-        Operating as: {operatorInfo.callsign} from {operatorInfo.address}
-      </p>
-
-      {!isDemo && <CheckinSessionViewer selectedSession={currentSession} />}
 
       {/* Label Size Control */}
       <div className="mb-4">
@@ -313,48 +313,62 @@ const Home: React.FC = () => {
           </button>
         </p>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <SimplexMap
-            center={operatorInfo.coordinates}
-            operatorInfo={operatorInfo}
-            locations={operatorLocations}
-            selectedStation={selectedStation}
-            showingHeardBy={showingHeardBy}
-            labelSize={labelSize}
-            onMarkerClick={handleMarkerClick}
-            onLoad={onLoad}
-            onUnmount={onUnmount}
-          />
-        </div>
-        <div className="space-y-4">
+
+      {/* Map Section - Full Width */}
+      <div className="mb-6 h-[800px] flex flex-col sm:flex-row">
+        <div className="w-full sm:w-1/2">
           <SignalReportForm
-            isDemo={true}
+            isDemo={isDemo}
             onSubmit={handleReportSubmitted}
             sessionId={currentSession?.id}
           />
+        </div>
+        <SimplexMap
+          center={operatorInfo.coordinates}
+          operatorInfo={operatorInfo}
+          locations={operatorLocations}
+          selectedStation={selectedStation}
+          showingHeardBy={showingHeardBy}
+          labelSize={labelSize}
+          onMarkerClick={handleMarkerClick}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+        />
+      </div>
+
+      {/* Session Viewer and Reports - Side by Side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column - Session Info */}
+        <div>
+          {!isDemo && <CheckinSessionViewer selectedSession={currentSession} />}
+          <div className="mt-4 space-x-2">
+            <button
+              onClick={clearOperatorInfo}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Clear Local Storage
+            </button>
+            <button
+              onClick={() =>
+                runDemo(
+                  setOperatorInfo,
+                  clearOperatorInfo,
+                  setOperatorLocations,
+                  setReports,
+                  setSelectedStation,
+                  setShowingHeardBy
+                )
+              }
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Run 30s Demo
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column - Recent Reports */}
+        <div>
           <RecentReports reports={reports} />
-          <button
-            onClick={clearOperatorInfo}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Clear Local Storage
-          </button>
-          <button
-            onClick={() =>
-              runDemo(
-                setOperatorInfo,
-                clearOperatorInfo,
-                setOperatorLocations,
-                setReports,
-                setSelectedStation,
-                setShowingHeardBy
-              )
-            }
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 ml-2"
-          >
-            Run 30s Demo
-          </button>
         </div>
       </div>
     </div>
