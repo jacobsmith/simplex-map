@@ -233,9 +233,28 @@ const Home: React.FC = () => {
     );
   }
 
+  const handleEndDemo = () => {
+    window.speechSynthesis.cancel();
+    setIsDemo(false);
+    clearOperatorInfo();
+    setOperatorInfo(null);
+    setSelectedStation(null);
+    setLines([]);
+  };
+
   return isLoaded ? (
     <div className="p-4">
-      <h1 className="text-3xl mb-4">Simplex Map</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl mb-4">Simplex Map</h1>
+        {isDemo && (
+          <button
+            onClick={handleEndDemo}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            End Demo
+          </button>
+        )}
+      </div>
       <p className="mb-4">
         Operating as: {operatorInfo.callsign} from {operatorInfo.address}
       </p>
