@@ -152,6 +152,11 @@ const OperatorSetupForm: React.FC<OperatorSetupFormProps> = ({
               </div>
             </div>
 
+            <div className="text-sm text-gray-600">
+              If you don't see your location on the map, please choose another
+              address that is close by.
+            </div>
+
             {showMap && (
               <div className="mt-4">
                 <div className="mb-4">
