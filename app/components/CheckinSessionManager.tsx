@@ -169,97 +169,117 @@ const CheckinSessionManager: React.FC<CheckinSessionManagerProps> = ({
   };
 
   return (
-    <div className="mb-4 p-4 border rounded">
-      <h2 className="text-xl mb-4">Check-in Session</h2>
-
-      {currentSession ? (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
         <div>
-          <p>Current session: {currentSession.name}</p>
-          <p>Region: {currentSession.region}</p>
-          <div className="mt-4">
-            <h3 className="text-lg mb-2">Active Participants</h3>
-            <div className="space-y-2">
-              {participants.map((participant) => (
-                <div key={participant.id} className="text-sm">
-                  {participant.callsign}
-                </div>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={leaveSession}
-            className="bg-red-500 text-white px-2 py-1 rounded text-sm mt-4"
-          >
-            Leave Session
-          </button>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Check-in Session
+          </h2>
         </div>
-      ) : (
-        <div>
-          <button
-            onClick={() => setShowNewSessionForm(!showNewSessionForm)}
-            className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
-          >
-            Create New Session
-          </button>
-
-          {showNewSessionForm && (
-            <form onSubmit={createSession} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Session Name"
-                value={newSession.name}
-                onChange={(e) =>
-                  setNewSession({ ...newSession, name: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Region (e.g., County/State)"
-                value={newSession.region}
-                onChange={(e) =>
-                  setNewSession({ ...newSession, region: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-              <textarea
-                placeholder="Description"
-                value={newSession.description}
-                onChange={(e) =>
-                  setNewSession({ ...newSession, description: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-              />
+        <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+          {currentSession ? (
+            <div>
+              <p className="text-lg font-bold mb-2">
+                Current session: {currentSession.name}
+              </p>
+              <p className="text-sm text-gray-600">
+                Region: {currentSession.region}
+              </p>
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">
+                  Active Participants
+                </h3>
+                <div className="space-y-2">
+                  {participants.map((participant) => (
+                    <div key={participant.id} className="text-sm">
+                      {participant.callsign}
+                    </div>
+                  ))}
+                </div>
+              </div>
               <button
-                type="submit"
-                className="bg-green-500 text-white px-4 py-2 rounded"
+                onClick={leaveSession}
+                className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mt-4"
               >
-                Create Session
+                Leave Session
               </button>
-            </form>
-          )}
+            </div>
+          ) : (
+            <div>
+              <button
+                onClick={() =>
+                  confirm(
+                    "This is intended for net control use only. Are you sure you want to create a new session?"
+                  ) && setShowNewSessionForm(!showNewSessionForm)
+                }
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
+              >
+                Create New Session
+              </button>
 
-          <div className="mt-4">
-            <h3 className="text-lg mb-2">Active Sessions</h3>
-            {sessions
-              .filter((s) => s.is_active)
-              .map((session) => (
-                <div key={session.id} className="p-2 border rounded mb-2">
-                  <p className="font-bold">{session.name}</p>
-                  <p className="text-sm">{session.region}</p>
+              {showNewSessionForm && (
+                <form onSubmit={createSession} className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Session Name"
+                    value={newSession.name}
+                    onChange={(e) =>
+                      setNewSession({ ...newSession, name: e.target.value })
+                    }
+                    className="border p-2 w-full rounded"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Region (e.g., County/State)"
+                    value={newSession.region}
+                    onChange={(e) =>
+                      setNewSession({ ...newSession, region: e.target.value })
+                    }
+                    className="border p-2 w-full rounded"
+                    required
+                  />
+                  <textarea
+                    placeholder="Description"
+                    value={newSession.description}
+                    onChange={(e) =>
+                      setNewSession({
+                        ...newSession,
+                        description: e.target.value,
+                      })
+                    }
+                    className="border p-2 w-full rounded"
+                  />
                   <button
-                    onClick={() => joinSession(session)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                    type="submit"
+                    className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                   >
-                    Join Session
+                    Create Session
                   </button>
-                </div>
-              ))}
-          </div>
+                </form>
+              )}
+
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Active Sessions</h3>
+                {sessions
+                  .filter((s) => s.is_active)
+                  .map((session) => (
+                    <div key={session.id} className="p-2 border rounded mb-2">
+                      <p className="font-bold">{session.name}</p>
+                      <p className="text-sm">{session.region}</p>
+                      <button
+                        onClick={() => joinSession(session)}
+                        className="w-full bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-sm"
+                      >
+                        Join Session
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

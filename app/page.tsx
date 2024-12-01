@@ -15,6 +15,7 @@ import {
 } from "./utils/stationUtils";
 import CheckinSessionManager from "./components/CheckinSessionManager";
 import { runDemo } from "./utils/demoScript";
+import Stepper from "./components/Stepper";
 
 // TODO: pop up stations as they log in
 
@@ -229,6 +230,17 @@ const Home: React.FC = () => {
             setShowingHeardBy
           );
         }}
+      />
+    );
+  }
+
+  if (!currentSession) {
+    return (
+      <CheckinSessionManager
+        operatorCallsign={operatorInfo.callsign}
+        currentSession={currentSession}
+        onSessionChange={setCurrentSession}
+        coordinates={operatorInfo.coordinates}
       />
     );
   }
